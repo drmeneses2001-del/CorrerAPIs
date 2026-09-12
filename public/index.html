@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>CorrerAPIs</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="loginScreen">
+      <div class="card">
+        <h2>CorrerAPIs</h2>
+        <p class="hint">Ingresa la contraseña de la app para administrar tus conexiones de API.</p>
+        <div class="field">
+          <label for="loginPassword">Contraseña</label>
+          <input id="loginPassword" type="password" autocomplete="current-password" />
+        </div>
+        <div id="loginError" class="hint status-err" hidden></div>
+        <div class="actions">
+          <button class="btn primary" id="loginBtn">Entrar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="mainScreen" hidden>
+      <header class="topbar">
+        <h1>CorrerAPIs</h1>
+        <button class="btn ghost" id="logoutBtn">Salir</button>
+      </header>
+      <main class="layout">
+        <aside class="sidebar">
+          <button class="btn primary" id="newConnBtn" style="width:100%">+ Nueva conexion</button>
+          <div class="section-title">Conexiones</div>
+          <ul class="conn-list" id="connList"></ul>
+        </aside>
+        <section class="content">
+          <div id="emptyState" class="empty-state">
+            <p>Selecciona una conexion o crea una nueva para empezar.</p>
+          </div>
+
+          <div id="connForm" class="card" hidden>
+            <h2 id="formTitle">Nueva conexion</h2>
+            <div class="row">
+              <div class="field">
+                <label for="fName">Nombre</label>
+                <input id="fName" placeholder="Ej. GPT-4o, Astra Vectorize" />
+              </div>
+              <div class="field">
+                <label for="fModel">Modelo</label>
+                <input id="fModel" placeholder="Ej. gpt-4o, claude-sonnet-5" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="fBaseUrl">URL base (nativa de la API)</label>
+              <input id="fBaseUrl" placeholder="https://api.openai.com/v1/" />
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="fPath">Path por defecto</label>
+                <input id="fPath" placeholder="chat/completions" />
+              </div>
+              <div class="field">
+                <label for="fMethod">Metodo</label>
+                <select id="fMethod">
+                  <option value="POST">POST</option>
+                  <option value="GET">GET</option>
+                  <option value="PUT">PUT</option>
+                  <option value="PATCH">PATCH</option>
+                  <option value="DELETE">DELETE</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="fAuthHeader">Header de autenticacion</label>
+                <input id="fAuthHeader" placeholder="Authorization" />
+              </div>
+              <div class="field">
+                <label for="fAuthScheme">Prefijo del header</label>
+                <input id="fAuthScheme" placeholder="Bearer (espacio incluido)" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="fApiKey">API key <span id="fApiKeyHint" class="hint"></span></label>
+              <input id="fApiKey" type="password" autocomplete="new-password" placeholder="Se guarda cifrada, nunca se muestra de nuevo" />
+              <span class="hint">La key se cifra en el servidor y jamas se envia de vuelta al navegador.</span>
+            </div>
+            <div class="actions">
+              <button class="btn primary" id="saveConnBtn">Guardar</button>
+              <button class="btn ghost" id="cancelFormBtn">Cancelar</button>
+              <button class="btn danger" id="deleteConnBtn" hidden>Eliminar</button>
+            </div>
+          </div>
+
+          <div id="runPanel" class="card" hidden>
+            <h2>Correr llamada</h2>
+            <div class="row">
+              <div class="field">
+                <label for="rPath">Path (opcional, sobreescribe el default)</label>
+                <input id="rPath" placeholder="chat/completions" />
+              </div>
+              <div class="field">
+                <label>&nbsp;</label>
+                <label style="flex-direction:row; align-items:center; gap:8px; display:flex;">
+                  <input type="checkbox" id="rInjectModel" checked style="width:auto;" />
+                  Inyectar "model" automaticamente en el body
+                </label>
+              </div>
+            </div>
+            <div class="field">
+              <label for="rBody">Body (JSON)</label>
+              <textarea id="rBody">{
+  "messages": [
+    { "role": "user", "content": "Hola" }
+  ]
+}</textarea>
+            </div>
+            <div class="actions">
+              <button class="btn primary" id="runBtn">Ejecutar</button>
+            </div>
+            <div id="runMeta" class="hint" style="margin-top:10px;"></div>
+            <pre class="response" id="runResponse" hidden></pre>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

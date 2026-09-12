@@ -1,0 +1,21 @@
+{
+  "name": "correrapis",
+  "version": "1.0.0",
+  "description": "App web para definir y correr multiples APIs (URL, modelo, API key) desde un iPad, sin exponer nunca las API keys al navegador.",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0"
+  }
+}
