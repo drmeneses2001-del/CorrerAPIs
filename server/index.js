@@ -13,8 +13,8 @@ if (!process.env.SESSION_SECRET) {
   console.warn('[aviso] SESSION_SECRET no definido, usando uno temporal (se invalidan sesiones al reiniciar).');
 }
 
-// Railway/Render terminan HTTPS en su proxy y reenvian por HTTP interno;
-// esto permite que la cookie "secure" y la deteccion de HTTPS funcionen bien.
+// Render termina HTTPS en su proxy y reenvia por HTTP interno; esto permite
+// que la cookie "secure" y la deteccion de HTTPS funcionen bien.
 app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '2mb' }));
@@ -40,38 +40,55 @@ app.post('/api/logout', auth.logout);
 app.get('/api/session', auth.status);
 
 // --- Conexiones (CRUD) — la API key nunca sale en texto plano ---
-app.get('/api/connections', auth.requireAuth, (req, res) => {
-  res.json(store.listConnections());
+app.get('/api/connections', auth.requireAuth, async (req, res) => {
+  try {
+    res.json(await store.listConnections());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/connections', auth.requireAuth, (req, res) => {
+app.post('/api/connections', auth.requireAuth, async (req, res) => {
   const { name, baseUrl } = req.body || {};
   if (!name || !baseUrl) {
     return res.status(400).json({ error: 'name y baseUrl son obligatorios' });
   }
   try {
-    const conn = store.createConnection(req.body);
+    const conn = await store.createConnection(req.body);
     res.status(201).json(conn);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.put('/api/connections/:id', auth.requireAuth, (req, res) => {
-  const updated = store.updateConnection(req.params.id, req.body || {});
-  if (!updated) return res.status(404).json({ error: 'Conexion no encontrada' });
-  res.json(updated);
+app.put('/api/connections/:id', auth.requireAuth, async (req, res) => {
+  try {
+    const updated = await store.updateConnection(req.params.id, req.body || {});
+    if (!updated) return res.status(404).json({ error: 'Conexion no encontrada' });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.delete('/api/connections/:id', auth.requireAuth, (req, res) => {
-  const ok = store.deleteConnection(req.params.id);
-  if (!ok) return res.status(404).json({ error: 'Conexion no encontrada' });
-  res.status(204).end();
+app.delete('/api/connections/:id', auth.requireAuth, async (req, res) => {
+  try {
+    const ok = await store.deleteConnection(req.params.id);
+    if (!ok) return res.status(404).json({ error: 'Conexion no encontrada' });
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // --- Ejecutar una llamada contra la API real, inyectando la key solo en el servidor ---
 app.post('/api/run/:id', auth.requireAuth, async (req, res) => {
-  const conn = store.getConnectionRaw(req.params.id);
+  let conn;
+  try {
+    conn = await store.getConnectionRaw(req.params.id);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
   if (!conn) return res.status(404).json({ error: 'Conexion no encontrada' });
 
   const { path: pathOverride, body, injectModel = true } = req.body || {};

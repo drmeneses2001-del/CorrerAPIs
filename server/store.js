@@ -1,25 +1,46 @@
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 const { encrypt, decrypt, maskSecret } = require('./crypto');
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
-const DATA_FILE = path.join(DATA_DIR, 'connections.json');
+const REDIS_KEY = 'correrapis:connections';
 
-function ensureStore() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, '[]', 'utf8');
+function redisConfig() {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    throw new Error(
+      'Faltan UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN en el entorno (ver README).'
+    );
+  }
+  return { url, token };
 }
 
-function readAll() {
-  ensureStore();
-  const raw = fs.readFileSync(DATA_FILE, 'utf8');
-  return JSON.parse(raw || '[]');
+// Habla directo con la API REST de Upstash (sin SDK, sin binarios nativos):
+// https://upstash.com/docs/redis/features/restapi
+async function redisCommand(command) {
+  const { url, token } = redisConfig();
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(command),
+  });
+  if (!res.ok) {
+    throw new Error(`Upstash respondio HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  if (data.error) throw new Error('Upstash: ' + data.error);
+  return data.result;
 }
 
-function writeAll(list) {
-  ensureStore();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), 'utf8');
+async function readAll() {
+  const raw = await redisCommand(['GET', REDIS_KEY]);
+  return raw ? JSON.parse(raw) : [];
+}
+
+async function writeAll(list) {
+  await redisCommand(['SET', REDIS_KEY, JSON.stringify(list)]);
 }
 
 // Forma pública (nunca incluye la API key en texto plano)
@@ -40,16 +61,18 @@ function toPublic(conn) {
   };
 }
 
-function listConnections() {
-  return readAll().map(toPublic);
+async function listConnections() {
+  const list = await readAll();
+  return list.map(toPublic);
 }
 
-function getConnectionRaw(id) {
-  return readAll().find((c) => c.id === id) || null;
+async function getConnectionRaw(id) {
+  const list = await readAll();
+  return list.find((c) => c.id === id) || null;
 }
 
-function createConnection(data) {
-  const list = readAll();
+async function createConnection(data) {
+  const list = await readAll();
   const now = new Date().toISOString();
   const conn = {
     id: crypto.randomUUID(),
@@ -65,12 +88,12 @@ function createConnection(data) {
     updatedAt: now,
   };
   list.push(conn);
-  writeAll(list);
+  await writeAll(list);
   return toPublic(conn);
 }
 
-function updateConnection(id, data) {
-  const list = readAll();
+async function updateConnection(id, data) {
+  const list = await readAll();
   const idx = list.findIndex((c) => c.id === id);
   if (idx === -1) return null;
   const existing = list[idx];
@@ -87,15 +110,15 @@ function updateConnection(id, data) {
     updatedAt: new Date().toISOString(),
   };
   list[idx] = updated;
-  writeAll(list);
+  await writeAll(list);
   return toPublic(updated);
 }
 
-function deleteConnection(id) {
-  const list = readAll();
+async function deleteConnection(id) {
+  const list = await readAll();
   const next = list.filter((c) => c.id !== id);
   const changed = next.length !== list.length;
-  if (changed) writeAll(next);
+  if (changed) await writeAll(next);
   return changed;
 }
 
