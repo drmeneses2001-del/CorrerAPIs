@@ -13,6 +13,10 @@ if (!process.env.SESSION_SECRET) {
   console.warn('[aviso] SESSION_SECRET no definido, usando uno temporal (se invalidan sesiones al reiniciar).');
 }
 
+// Railway/Render terminan HTTPS en su proxy y reenvian por HTTP interno;
+// esto permite que la cookie "secure" y la deteccion de HTTPS funcionen bien.
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '2mb' }));
 app.use(
   session({
@@ -27,6 +31,8 @@ app.use(
     },
   })
 );
+
+app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
 // --- Auth ---
 app.post('/api/login', auth.login);

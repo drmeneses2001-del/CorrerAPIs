@@ -53,6 +53,34 @@ Por defecto queda en `http://localhost:3000`.
 Si vas a exponerla fuera de `localhost` (por ejemplo en tu red local o un servidor),
 sírvela detrás de HTTPS y pon `COOKIE_SECURE=true` en `.env`.
 
+## Desplegar en Railway (recomendado)
+
+GitHub por si solo no puede correr esta app (GitHub Pages solo sirve archivos
+estaticos; CorrerAPIs necesita un servidor Node vivo). Railway se conecta a tu
+repo de GitHub y hace deploy automatico en cada push, y sus planes incluyen
+**volumenes persistentes** — importante aqui porque `data/connections.json`
+(tus API keys cifradas) debe sobrevivir a cada redeploy.
+
+1. Sube el proyecto a GitHub (ya esta en la rama `claude/ipad-api-runner-app-o5tpgd`
+   de este repo).
+2. En [railway.app](https://railway.app), **New Project → Deploy from GitHub repo**
+   y selecciona este repositorio y esa rama. Railway detecta que es Node y usa
+   `npm start` automaticamente (ya viene configurado en `railway.json`).
+3. En la pestaña **Variables** del servicio agrega:
+   - `APP_PASSWORD_HASH`
+   - `ENCRYPTION_KEY`
+   - `SESSION_SECRET`
+   - `COOKIE_SECURE=true`
+   - `DATA_DIR=/data`
+
+   (genera los dos primeros con los comandos de "Configuración inicial" arriba).
+4. Agrega un **Volume** al servicio (pestaña **Volumes**) con mount path `/data`.
+   Esto hace que `data/connections.json` no se borre en cada deploy.
+5. Railway te da un dominio propio en HTTPS (`algo.up.railway.app`). Ese es el
+   link que abres en Safari en el iPad Pro y agregas a la pantalla de inicio.
+
+Cada vez que hagas push a la rama conectada, Railway vuelve a desplegar solo.
+
 ## Usarla desde el iPad Pro
 
 1. Abre la URL del servidor en Safari.
