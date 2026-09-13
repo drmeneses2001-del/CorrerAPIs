@@ -9,8 +9,10 @@ const el = (id) => document.getElementById(id);
 function debugLog(msg) {
   try {
     const panel = document.getElementById('debugLog');
+    const closeBtn = document.getElementById('debugLogClose');
     if (!panel) return;
     panel.hidden = false;
+    if (closeBtn) closeBtn.hidden = false;
     const line = document.createElement('div');
     line.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
     panel.appendChild(line);
@@ -19,6 +21,11 @@ function debugLog(msg) {
     // no-op: el panel de debug nunca debe romper la app
   }
 }
+
+document.getElementById('debugLogClose')?.addEventListener('click', () => {
+  document.getElementById('debugLog').hidden = true;
+  document.getElementById('debugLogClose').hidden = true;
+});
 
 window.onerror = (msg, url, line, col) => debugLog('ERROR JS: ' + msg + ' (linea ' + line + ':' + col + ')');
 window.addEventListener('unhandledrejection', (e) => {
