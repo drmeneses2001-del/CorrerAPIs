@@ -6,6 +6,26 @@ const state = {
 
 const el = (id) => document.getElementById(id);
 
+function debugLog(msg) {
+  try {
+    const panel = document.getElementById('debugLog');
+    if (!panel) return;
+    panel.hidden = false;
+    const line = document.createElement('div');
+    line.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+    panel.appendChild(line);
+    panel.scrollTop = panel.scrollHeight;
+  } catch (e) {
+    // no-op: el panel de debug nunca debe romper la app
+  }
+}
+
+window.onerror = (msg, url, line, col) => debugLog('ERROR JS: ' + msg + ' (linea ' + line + ':' + col + ')');
+window.addEventListener('unhandledrejection', (e) => {
+  debugLog('PROMESA RECHAZADA: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+});
+debugLog('app.js cargado y ejecutandose');
+
 async function api(path, options = {}) {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
@@ -29,8 +49,10 @@ function showMain() {
 }
 
 async function checkSession() {
+  debugLog('checkSession: consultando /api/session');
   const res = await fetch('/api/session');
   const data = await res.json();
+  debugLog('checkSession: authenticated=' + data.authenticated);
   if (data.authenticated) {
     showMain();
     await loadConnections();
@@ -68,8 +90,10 @@ el('logoutBtn').addEventListener('click', async () => {
 });
 
 async function loadConnections() {
+  debugLog('loadConnections: pidiendo /api/connections');
   const res = await api('/api/connections');
   state.connections = await res.json();
+  debugLog('loadConnections: recibidas ' + (Array.isArray(state.connections) ? state.connections.length : 'NO-ARRAY: ' + JSON.stringify(state.connections)) + ' conexiones');
   renderList();
   if (state.selectedId && !state.connections.find((c) => c.id === state.selectedId)) {
     state.selectedId = null;
@@ -101,10 +125,18 @@ function selectConnection(id) {
   renderDetail();
 }
 
-el('newConnBtn').addEventListener('click', () => {
-  state.selectedId = null;
-  state.creating = true;
-  renderDetail();
+const newConnBtnEl = el('newConnBtn');
+debugLog('newConnBtn encontrado en el DOM: ' + Boolean(newConnBtnEl));
+newConnBtnEl.addEventListener('click', () => {
+  debugLog('clic detectado en +Nueva conexion');
+  try {
+    state.selectedId = null;
+    state.creating = true;
+    renderDetail();
+    debugLog('renderDetail ejecutado sin errores, connForm.hidden=' + el('connForm').hidden);
+  } catch (err) {
+    debugLog('ERROR dentro de renderDetail: ' + err.message);
+  }
 });
 
 function renderDetail() {

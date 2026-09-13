@@ -1,4 +1,4 @@
-const CACHE = 'correrapis-shell-v1';
+const CACHE = 'correrapis-shell-v2';
 const SHELL = ['/', '/styles.css', '/app.js', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
